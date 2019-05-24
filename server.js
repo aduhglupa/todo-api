@@ -4,6 +4,8 @@ var _ = require('underscore');
 var db = require('./db.js');
 var bcrypt = require('bcrypt');
 
+var middleware = require('./middleware.js')(db);
+
 var app = express();
 var PORT = process.env.PORT || 3000;
 var todos = [];
@@ -15,7 +17,7 @@ app.get('/', function (req, res) {
     res.send('TODO API ROOT');
 });
 
-app.get('/todos', function (req, res) {
+app.get('/todos', middleware.requireAuthentication, function (req, res) {
     var query = req.query;
     var where = {};
 
@@ -42,7 +44,7 @@ app.get('/todos', function (req, res) {
         });
 });
 
-app.get('/todos/:id', function (req, res) {
+app.get('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoId = +req.params.id;
 
     db.todo.findById(todoId)
@@ -63,7 +65,7 @@ app.get('/todos/:id', function (req, res) {
     // res.status(404).send();
 });
 
-app.post('/todos', function (req, res) {
+app.post('/todos', middleware.requireAuthentication, function (req, res) {
     var body = _.pick(req.body, 'description', 'completed');
 
     db.todo.create(body)
@@ -85,7 +87,7 @@ app.post('/todos', function (req, res) {
     // res.json(body);
 });
 
-app.delete('/todos/:id', function (req, res) {
+app.delete('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoId = +req.params.id;
 
     db.todo
@@ -105,7 +107,7 @@ app.delete('/todos/:id', function (req, res) {
         });
 });
 
-app.put('/todos/:id', function (req, res) {
+app.put('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoId = +req.params.id;
     var body = _.pick(req.body, 'description', 'completed');
     var attributes = {};
@@ -163,7 +165,7 @@ app.post('/users/login', function (req, res) {
         });
 });
 
-db.sequelize.sync(/* {force: true} */)
+db.sequelize.sync({force: true})
     .then(function () {
         app.listen(PORT, function () {
             console.log(`Express listeing on port ${PORT}!`);
